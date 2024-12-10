@@ -22,6 +22,10 @@ Este proyecto implementa un lenguaje para describir y navegar entre galaxias rep
   
 - **input.txt**: Archivo de entrada con las instrucciones del lenguaje.
 
+## Ejemplo de entrada
+```text
+./parser "archivo.txt"
+
 ## Ejemplo de `input.txt`
 
 ```text
