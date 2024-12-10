@@ -248,7 +248,8 @@ for (u,v) in visited_edges:
     if (v,u) not in visited_undirected:
         visited_undirected.add((u,v))
 nx.draw_networkx_edges(G, pos, edgelist=list(visited_undirected), edge_color="red", width=2.5)
-
+edge_labels = nx.get_edge_attributes(G, 'weight')
+nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10)
 plt.title("Grafo resultante con ruta de la nave")
 plt.axis("off")
 plt.show()
