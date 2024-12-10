@@ -106,7 +106,7 @@ int galaxyIndex(char *name) {
 int addGalaxy(char *name, int fueling) {
     // Agrega una galaxia y devuelve su índice
     Galaxy *g = malloc(sizeof(Galaxy));
-    g->name = name;
+    g->name = strdup(name); // Usar strdup para copiar la cadena
     g->fueling = fueling;
     galaxies[galaxy_count] = g;
     adjList[galaxy_count] = NULL;
@@ -299,7 +299,7 @@ void viajarAutonomo(char *destino, int modo, int pasos) {
     // Debemos encontrar la posición actual en la ruta (será path[0] = start)
     // Avanzar hasta min(path_len-1, pasos) nodos más (no contamos el start)
     int currentIndexInPath=0;
-    // encontrar la posicion actual en la ruta
+    // Encontrar la posición actual en la ruta
     // (ya está en start, se asume path[0] = start)
     // Mover la nave 'pasos' nodos más adelante en el path.
     int toMove = pasos;
@@ -317,12 +317,13 @@ void viajarAutonomo(char *destino, int modo, int pasos) {
         }
         if (nave_combustible<edgeCost) {
             // Sin combustible suficiente
-            printf("La nave se quedó sin combustible en el camino. La tripulación muere.\n");
+            printf("La nave se quedó sin combustible entre %s y %s. Tripulación muere.\n", galaxies[u]->name, galaxies[v]->name);
             return;
         }
         // Consumir combustible
         nave_combustible-=edgeCost;
         nave_pos=v;
+        printf("La nave ha avanzado a %s. Combustible restante: %d.\n", galaxies[nave_pos]->name, nave_combustible);
         currentIndexInPath++;
         toMove--;
     }
@@ -351,15 +352,12 @@ void verVecinas(int radio) {
     printf("Galaxias alcanzables (radio=%d):\n", radio);
     while(front<rear) {
         int u=queue[front++];
-        if (dist[u]<=radio) {
-            // imprimir galaxia
-            if (u!=nave_pos) {
-                printf(" - %s (distancia=%d)\n", galaxies[u]->name, dist[u]);
-            }
-            if (dist[u]<radio) {
-                for (EdgeNode *e=adjList[u]; e; e=e->next) {
-                    if (dist[e->dest]==INT_MAX) {
-                        dist[e->dest]=dist[u]+1;
+        if (dist[u]<radio) { // Corregido de <= a <
+            for (EdgeNode *e=adjList[u]; e; e=e->next) {
+                if (dist[e->dest]==INT_MAX) {
+                    dist[e->dest]=dist[u]+1;
+                    if (dist[e->dest]<=radio) {
+                        printf(" - %s (distancia=%d)\n", galaxies[e->dest]->name, dist[e->dest]);
                         queue[rear++]=e->dest;
                     }
                 }
@@ -414,7 +412,7 @@ void recargarCombustible() {
 }
 
 
-#line 418 "parser.tab.c"
+#line 416 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -864,9 +862,9 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   381,   381,   383,   387,   388,   389,   390,   391,   392,
-     393,   394,   395,   399,   400,   404,   408,   412,   416,   423,
-     424,   428,   429,   433,   434,   438,   442
+       0,   379,   379,   381,   385,   386,   387,   388,   389,   390,
+     391,   392,   393,   397,   398,   402,   406,   410,   414,   422,
+     423,   427,   428,   432,   433,   437,   441
 };
 #endif
 
@@ -1452,100 +1450,101 @@ yyreduce:
   switch (yyn)
     {
   case 12: /* linea: error  */
-#line 395 "parser.y"
+#line 393 "parser.y"
             { yyerrok; }
-#line 1458 "parser.tab.c"
+#line 1456 "parser.tab.c"
     break;
 
   case 13: /* def_galaxia: GALAXIA IDENTIFICADOR  */
-#line 399 "parser.y"
+#line 397 "parser.y"
                           { addGalaxy((yyvsp[0].strval),0); }
-#line 1464 "parser.tab.c"
+#line 1462 "parser.tab.c"
     break;
 
   case 14: /* def_galaxia: GALAXIA IDENTIFICADOR ABASTECER  */
-#line 400 "parser.y"
+#line 398 "parser.y"
                                       { addGalaxy((yyvsp[-1].strval),1); }
-#line 1470 "parser.tab.c"
+#line 1468 "parser.tab.c"
     break;
 
   case 15: /* def_arista: ARISTA IDENTIFICADOR IDENTIFICADOR NUMERO  */
-#line 404 "parser.y"
+#line 402 "parser.y"
                                               { addEdge((yyvsp[-2].strval),(yyvsp[-1].strval),(yyvsp[0].intval)); }
-#line 1476 "parser.tab.c"
+#line 1474 "parser.tab.c"
     break;
 
   case 16: /* upd_arista: ACTUALIZAR_ARISTA IDENTIFICADOR IDENTIFICADOR NUMERO  */
-#line 408 "parser.y"
+#line 406 "parser.y"
                                                          { updateEdge((yyvsp[-2].strval),(yyvsp[-1].strval),(yyvsp[0].intval)); }
-#line 1482 "parser.tab.c"
+#line 1480 "parser.tab.c"
     break;
 
   case 17: /* crear_nav: NAVE IDENTIFICADOR NUMERO  */
-#line 412 "parser.y"
+#line 410 "parser.y"
                               { crearNave((yyvsp[-1].strval),(yyvsp[0].intval)); }
-#line 1488 "parser.tab.c"
+#line 1486 "parser.tab.c"
     break;
 
   case 18: /* cmd_viaje_auto: VIAJE_AUTO DESTINO IDENTIFICADOR modo_opt pasos_opt  */
-#line 416 "parser.y"
+#line 414 "parser.y"
                                                         {
         int m = ((yyvsp[-1].intval) == 1) ? 1 : 2;
-        viajarAutonomo((yyvsp[-2].strval),m,(yyvsp[0].intval));
+        printf("Comando VIAJE_AUTO: Destino=%s, Modo=%d, Pasos=%d\n", (yyvsp[-2].strval), m, (yyvsp[0].intval));
+        viajarAutonomo((yyvsp[-2].strval), m, (yyvsp[0].intval));
     }
-#line 1497 "parser.tab.c"
+#line 1496 "parser.tab.c"
     break;
 
   case 19: /* modo_opt: MODO MIN_COMBUSTIBLE  */
-#line 423 "parser.y"
+#line 422 "parser.y"
                          { (yyval.intval)=1; }
-#line 1503 "parser.tab.c"
+#line 1502 "parser.tab.c"
     break;
 
   case 20: /* modo_opt: MODO MIN_SALTOS  */
-#line 424 "parser.y"
+#line 423 "parser.y"
                       { (yyval.intval)=2; }
-#line 1509 "parser.tab.c"
+#line 1508 "parser.tab.c"
     break;
 
   case 21: /* pasos_opt: PASOS NUMERO  */
-#line 428 "parser.y"
+#line 427 "parser.y"
                  { (yyval.intval)=(yyvsp[0].intval); }
-#line 1515 "parser.tab.c"
+#line 1514 "parser.tab.c"
     break;
 
   case 22: /* pasos_opt: %empty  */
-#line 429 "parser.y"
+#line 428 "parser.y"
                    { (yyval.intval)=1; }
-#line 1521 "parser.tab.c"
+#line 1520 "parser.tab.c"
     break;
 
   case 23: /* cmd_viaje_manual: VIAJE_MANUAL VER_VECINAS RADIO NUMERO  */
-#line 433 "parser.y"
+#line 432 "parser.y"
                                           { verVecinas((yyvsp[0].intval)); }
-#line 1527 "parser.tab.c"
+#line 1526 "parser.tab.c"
     break;
 
   case 24: /* cmd_viaje_manual: VIAJE_MANUAL HACIA IDENTIFICADOR  */
-#line 434 "parser.y"
+#line 433 "parser.y"
                                        { viajeManualHacia((yyvsp[0].strval)); }
-#line 1533 "parser.tab.c"
+#line 1532 "parser.tab.c"
     break;
 
   case 25: /* cmd_recarga: RECARGAR  */
-#line 438 "parser.y"
+#line 437 "parser.y"
              { recargarCombustible(); }
-#line 1539 "parser.tab.c"
+#line 1538 "parser.tab.c"
     break;
 
   case 26: /* cmd_salir: SALIR  */
-#line 442 "parser.y"
+#line 441 "parser.y"
           { printf("Saliendo del programa...\n"); exit(0); }
-#line 1545 "parser.tab.c"
+#line 1544 "parser.tab.c"
     break;
 
 
-#line 1549 "parser.tab.c"
+#line 1548 "parser.tab.c"
 
       default: break;
     }
@@ -1738,7 +1737,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 445 "parser.y"
+#line 444 "parser.y"
 
 
 int main(int argc, char **argv) {
